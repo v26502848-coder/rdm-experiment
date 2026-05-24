@@ -502,10 +502,12 @@
                     jsPsych.finishTrial();
                 }
             },
-            on_finish: function(data) { 
-jsPsych.data.addProperties({
-  age: data?.response?.age || data?.response?.Q0 || null
-});                autosaveToLocalStorage();
+            on_finish: function(data) {
+                const response = data?.response || {};
+                jsPsych.data.addProperties({
+                    age: response.age ?? response.Q0 ?? null
+                });
+                autosaveToLocalStorage();
             }
         });
 
@@ -521,8 +523,11 @@ jsPsych.data.addProperties({
                     jsPsych.finishTrial();
                 }
             },
-            on_finish: function(data) { 
-                jsPsych.data.addProperties({gender: data.response.gender}); 
+            on_finish: function(data) {
+                const response = data?.response || {};
+                jsPsych.data.addProperties({
+                    gender: response.gender ?? response.Q0 ?? response.Q1 ?? null
+                });
                 autosaveToLocalStorage();
             }
         });
@@ -538,8 +543,11 @@ jsPsych.data.addProperties({
                     jsPsych.finishTrial();
                 }
             },
-            on_finish: function(data) { 
-                jsPsych.data.addProperties({sleep_duration: data.response.sleep}); 
+            on_finish: function(data) {
+                const response = data?.response || {};
+                jsPsych.data.addProperties({
+                    sleep_duration: response.sleep_duration ?? response.sleep ?? null
+                });
                 autosaveToLocalStorage();
             }
         });
@@ -556,8 +564,12 @@ jsPsych.data.addProperties({
                     jsPsych.finishTrial();
                 }
             },
-            on_finish: function(data) { 
-                jsPsych.data.addProperties({sleepiness_rating: data.response.sleepiness + 1}); 
+            on_finish: function(data) {
+                const response = data?.response || {};
+                const sleepinessValue = typeof response.sleepiness === 'number' ? response.sleepiness + 1 : null;
+                jsPsych.data.addProperties({
+                    sleepiness_rating: response.sleepiness_rating ?? sleepinessValue ?? null
+                });
                 autosaveToLocalStorage();
             }
         });
@@ -574,8 +586,11 @@ jsPsych.data.addProperties({
                     jsPsych.finishTrial();
                 }
             },
-            on_finish: function(data) { 
-                jsPsych.data.addProperties({caffeine_response: data.response.caffeine}); 
+            on_finish: function(data) {
+                const response = data?.response || {};
+                jsPsych.data.addProperties({
+                    caffeine_response: response.caffeine_response ?? response.caffeine ?? null
+                });
                 autosaveToLocalStorage();
             }
         });
