@@ -381,7 +381,7 @@
                 `;
 
                 // POST to localhost Express server
-                fetch('http://localhost:3000/api/save-trial-data', {
+                console.log("Skipping backend upload (Render deployment)");
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -485,23 +485,13 @@
                 <p>You may quit the task at any time without penalty. The data collected will be used only for research purposes. The task involves making timed perceptual decisions.</p>
                 <p><b>Please complete this task in a quiet environment using a laptop or desktop keyboard if possible.</b></p>
             </div>`,
-            choices: ["I Consent"],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            }
+            choices: ["I Consent"]
         });
 
         // Demographics
         timeline.push({
             type: jsPsychSurveyText,
             questions: [{prompt: "Please enter your age:", name: 'age', required: true}],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const response = data?.response || {};
                 jsPsych.data.addProperties({
@@ -518,11 +508,6 @@
                 options: ["Male", "Female", "Other", "Prefer not to say"],
                 name: 'gender', required: true
             }],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const response = data?.response || {};
                 jsPsych.data.addProperties({
@@ -538,11 +523,6 @@
         timeline.push({
             type: jsPsychSurveyText,
             questions: [{prompt: "How many hours did you sleep last night?", name: 'sleep', required: true}],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const response = data?.response || {};
                 jsPsych.data.addProperties({
@@ -559,11 +539,6 @@
                 labels: ["1 (Very alert)", "2", "3", "4", "5", "6", "7 (Very sleepy)"],
                 name: 'sleepiness', required: true
             }],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const response = data?.response || {};
                 const sleepinessValue = typeof response.sleepiness === 'number' ? response.sleepiness + 1 : null;
@@ -581,11 +556,6 @@
                 options: ["Yes", "No"],
                 name: 'caffeine', required: true
             }],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const response = data?.response || {};
                 jsPsych.data.addProperties({
@@ -611,12 +581,7 @@
                 </ul>
                 <p style="font-size: 18px; margin-top: 20px;">The full experiment contains 64 trials and usually takes about 8–10 minutes.</p>
             </div>`,
-            choices: ["Continue"],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            }
+            choices: ["Continue"]
         });
 
         // DEMONSTRATION 1
@@ -624,12 +589,7 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: "<h2>Notice how most dots move toward the RIGHT.</h2>",
             choices: "NO_KEYS",
-            trial_duration: 3000,
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            }
+            trial_duration: 3000
         });
         timeline.push({
             type: jsPsychRdk,
@@ -637,15 +597,10 @@
             coherence: 0.85,
             coherent_direction: 0,
             choices: "NO_KEYS",
+            correct_choice: ["l"],
             trial_duration: 3000,
             data: { phase: 'demonstration' },
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_load: function() {
-                if (completedCount > 0) return;
                 const lb = document.createElement('div');
                 lb.id = 'fixed-btn-left'; lb.className = 'response-btn left-btn fixed-btn-left';
                 lb.style.opacity = "0.5"; lb.style.cursor = "default";
@@ -669,12 +624,7 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: "<h2>Now notice how most dots move toward the LEFT.</h2>",
             choices: "NO_KEYS",
-            trial_duration: 3000,
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            }
+            trial_duration: 3000
         });
         timeline.push({
             type: jsPsychRdk,
@@ -682,15 +632,10 @@
             coherence: 0.85,
             coherent_direction: 180,
             choices: "NO_KEYS",
+            correct_choice: ["a"],
             trial_duration: 3000,
             data: { phase: 'demonstration' },
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_load: function() {
-                if (completedCount > 0) return;
                 const lb = document.createElement('div');
                 lb.id = 'fixed-btn-left'; lb.className = 'response-btn left-btn fixed-btn-left';
                 lb.style.opacity = "0.5"; lb.style.cursor = "default";
@@ -716,12 +661,7 @@
             <h2>Some later trials will be more subtle and difficult.</h2>
             <p style="font-size: 18px; margin-top: 20px;">Your task is to identify the overall direction as quickly and accurately as possible.</p>
             <p style="font-size: 20px; font-weight: bold; margin-top: 20px;">Press:<br><b>A</b> &rarr; Left<br><b>L</b> &rarr; Right</p>`,
-            choices: ["Begin Practice"],
-            on_start: function(trial) {
-                if (completedCount > 0) {
-                    jsPsych.finishTrial();
-                }
-            }
+            choices: ["Begin Practice"]
         });
 
         /**
@@ -747,12 +687,7 @@
                     type: jsPsychHtmlKeyboardResponse,
                     stimulus: "<h1 style='font-size: 60px;'>+</h1>",
                     choices: "NO_KEYS", trial_duration: 800,
-                    data: { phase: 'fixation' },
-                    on_start: function(trial) {
-                        if (globalTrialIndex < completedCount) {
-                            jsPsych.finishTrial();
-                        }
-                    }
+                    data: { phase: 'fixation' }
                 });
 
                 // RDK Trial
@@ -762,24 +697,13 @@
                     coherence: cohs[i],
                     coherent_direction: cohDir,
                     choices: ["a", "l"],
-                    correct_choice: [correctResp],
+                    correct_choice: correctResp,
                     response_ends_trial: true,
                     trial_duration: duration,
                     on_start: function(trial) {
-                        if (globalTrialIndex < completedCount) {
-                            // Recover data raw matching localStorage state
-                            const restoredTrial = restoredTrials[globalTrialIndex];
-                            if (restoredTrial) {
-                                Object.assign(trial.data, restoredTrial);
-                            }
-                            jsPsych.finishTrial();
-                        } else {
-                            window.current_response_method = "keyboard";
-                        }
+                        window.current_response_method = "keyboard";
                     },
                     on_load: function() {
-                        if (globalTrialIndex < completedCount) return;
-                        
                         if (blockType === "pressure") {
                             let timerContainer = document.createElement("div");
                             timerContainer.id = "trial-timer-ui";
@@ -835,8 +759,6 @@
                         is_practice: (blockType === "practice")
                     },
                     on_finish: function(data) {
-                        if (globalTrialIndex < completedCount) return;
-
                         let timerUI = document.getElementById("trial-timer-ui");
                         if (timerUI) timerUI.remove();
                         let warningUI = document.getElementById("too-slow-ui");
@@ -901,19 +823,13 @@
                     segment.push({
                         type: jsPsychHtmlKeyboardResponse,
                         stimulus: function() {
-                            if (globalTrialIndex < completedCount) return "";
                             let lastTrial = jsPsych.data.get().last(1).values()[0];
                             let color = (lastTrial.displayed_feedback === "CORRECT") ? "#27ae60" : "#c0392b";
                             if (lastTrial.timeout_trial) color = "#c0392b";
                             return `<div class="feedback-text" style="color: ${color}">${lastTrial.displayed_feedback}</div>`;
                         },
                         choices: "NO_KEYS", trial_duration: 800,
-                        data: { phase: 'feedback' },
-                        on_start: function(trial) {
-                            if (globalTrialIndex < completedCount) {
-                                jsPsych.finishTrial();
-                            }
-                        }
+                        data: { phase: 'feedback' }
                     });
                 }
             }
@@ -946,12 +862,7 @@
                     let rt = rtCount > 0 ? (rtSum / rtCount).toFixed(2) : 0;
                     return `<div class="stats-box"><h2>Performance Summary</h2><p>Accuracy: <b>${acc}%</b></p><p>Average RT: <b>${rt} ms</b></p></div>`;
                 },
-                choices: ["Continue"],
-                on_start: function(trial) {
-                    if (endIndex <= completedCount) {
-                        jsPsych.finishTrial();
-                    }
-                }
+                choices: ["Continue"]
             };
         }
 
@@ -992,16 +903,8 @@
                     </div>`;
                 },
                 choices: ["Continue Evaluative Phase"],
-                on_start: function(trial) {
-                    if (startIndex < completedCount) {
-                        jsPsych.finishTrial();
-                    }
-                },
                 on_load: () => { 
-                    if (startIndex >= completedCount) {
-                        isPressurePhase = true;
-                        updateCreditHeader(); 
-                    }
+                    updateCreditHeader(); 
                 }
             };
         }
@@ -1023,12 +926,7 @@
             timeline.push({
                 type: jsPsychHtmlButtonResponse,
                 stimulus: `<h2>Neutral Block</h2><p style="font-size: 20px;">Segment ${s} of 4</p><br><p>Press Continue when ready.</p>`,
-                choices: ["Continue"],
-                on_start: function(trial) {
-                    if (startIndex < completedCount) {
-                        jsPsych.finishTrial();
-                    }
-                }
+                choices: ["Continue"]
             });
             timeline = timeline.concat(segmentTrials);
             timeline.push(createStatsScreen("neutral", s));
@@ -1063,11 +961,6 @@
                 <p style="font-size: 20px; font-weight: bold; color: #c0392b;">Time constraints are active. Respond as quickly and accurately as possible.</p>
             </div>`, 
             choices: ["Continue"],
-            on_start: function(trial) {
-                if (40 < completedCount) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function() {
                 isPressurePhase = true;
                 let header = document.getElementById('clinical-header');
@@ -1097,11 +990,6 @@
             stimulus: " ",
             trial_duration: 10,
             choices: "NO_KEYS",
-            on_start: function(trial) {
-                if (72 <= completedCount) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function() {
                 isPressurePhase = false;
                 let header = document.getElementById('clinical-header');
@@ -1120,11 +1008,6 @@
                 {prompt: "How confident did you feel in your performance?", labels: ["1","2","3","4","5","6","7"], required: true, name: 'c'},
                 {prompt: "To what extent did the performance messages affect you?", labels: ["1","2","3","4","5","6","7"], required: true, name: 'i'}
             ],
-            on_start: function(trial) {
-                if (restoredConfidenceRating !== null && restoredConfidenceRating !== undefined) {
-                    jsPsych.finishTrial();
-                }
-            },
             on_finish: function(data) {
                 const pVal = data.response.p + 1;
                 const cVal = data.response.c + 1;
