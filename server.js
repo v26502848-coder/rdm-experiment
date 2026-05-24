@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { 
@@ -9,7 +10,10 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => {
+    return res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Enable CORS and JSON parsing (supporting up to 2MB batches)
 app.use(cors());
@@ -462,9 +466,12 @@ app.get('/admin', (req, res) => {
     });
 });
 
-// Start Express Server
-const PORT = process.env.PORT || 3000;
+// Routes initialized successfully
+console.log('✅ Routes initialized: GET /, POST /api/save-trial-data, GET /api/export-merged-data, GET /admin');
+console.log(`📦 Database module loaded and ready.`);
+console.log(`📁 Static files served from ${path.join(__dirname)}`);
 
+// Start Express Server
 app.listen(PORT, () => {
     console.log(`\n======================================================`);
     console.log(`🚀 RDM Research Storage Server is online!`);
