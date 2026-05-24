@@ -503,8 +503,9 @@
                 }
             },
             on_finish: function(data) { 
-                jsPsych.data.addProperties({age: data.response.age}); 
-                autosaveToLocalStorage();
+jsPsych.data.addProperties({
+  age: data?.response?.age || data?.response?.Q0 || null
+});                autosaveToLocalStorage();
             }
         });
 
