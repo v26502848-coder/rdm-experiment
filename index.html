@@ -380,48 +380,19 @@
                     </div>
                 `;
 
-                // POST to localhost Express server
-                console.log("Skipping backend upload (Render deployment)");
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        participant_id: participant_id,
-                        trials: cleanData
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error("Express server rejected dataset saving");
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('submission-status').innerHTML = "Data Saved Successfully!";
-                    document.getElementById('submission-status').style.color = "#27ae60";
-                    document.getElementById('submission-details').innerHTML = "Your results have been automatically recorded into the secure research database.<br><br><b>You may now close this browser window. Thank you!</b>";
-                    document.getElementById('action-buttons').style.display = "block";
-                    
-                    // Clear active session only upon successful submission!
-                    try {
-                        localStorage.removeItem('rdm_study_active_session');
-                    } catch (e) {}
-                })
-                .catch(err => {
-                    console.warn("Storage server offline, triggering download fallback:", err);
-                    document.getElementById('submission-status').innerHTML = "Data Saved Locally (Offline Fallback)";
-                    document.getElementById('submission-status').style.color = "#d35400";
-                    document.getElementById('submission-details').innerHTML = "The research database server was unreachable.<br><br><b>A clean trial dataset (.csv) has been downloaded automatically to your computer.</b><br>Please email this file to your researcher.";
-                    document.getElementById('action-buttons').style.display = "block";
-                    
-                    downloadCleanCSV(cleanData);
-                    
-                    // Clear active session only after successful fallback download!
-                    try {
-                        localStorage.removeItem('rdm_study_active_session');
-                    } catch (e) {}
-                });
-            }
-        });
+console.log("Backend disabled for Render");
+
+document.getElementById('submission-status').innerHTML = "Experiment Complete";
+document.getElementById('submission-status').style.color = "#27ae60";
+
+document.getElementById('submission-details').innerHTML =
+"Data saved locally. You can close the window.";
+
+document.getElementById('action-buttons').style.display = "block";
+
+try {
+    localStorage.removeItem('rdm_study_active_session');
+} catch (e) {}                    
 
         // Add global properties to all data
         if (restoredDemographics) {
