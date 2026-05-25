@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html>
+    <!-- 
+    RDM Pressure Experiment - FINAL Polished Version
+    - Follows all instructions for coherence, timing, and manipulation.
+    - Standalone HTML file.
+    - Data displays at the end for debugging/review.
+    -->
+    <head>
+        <title>RDM Decision Making Study</title>
+
+        <!-- jsPsych v7 core -->
+        <script src="https://unpkg.com/jspsych@7.3.0"></script>
+        <link href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css" rel="stylesheet" />
+
+        <!-- jsPsych v7 plugins -->
+        <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych/plugin-survey-likert@1.1.0"></script>
+        <script src="https://unpkg.com/@jspsych-contrib/plugin-rdk@1.1.0"></script>
+
+        <style>
+            body { background-color: #fcfcfc; color: #333; font-family: 'Segoe UI', Arial, sans-serif; }
+            .jspsych-content { max-width: 1100px; }
+            .instruction-box { text-align: left; line-height: 1.6; }
+            .eval-box { border: 2px solid #3498db; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin: 20px 0; }
+            .stats-box { background: #f1f3f5; padding: 25px; border-radius: 12px; border-left: 6px solid #2c3e50; text-align: left; }
+            h2 { color: #2c3e50; }
+            .feedback-text { font-size: 42px; font-weight: bold; text-align: center; }
+            
+            /* Clinical UI Elements */
+            #clinical-header {
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+                background: rgba(10, 10, 10, 0.9); color: #ffffff; font-size: 34px; font-weight: bold;
+                padding: 12px 50px; text-align: center; z-index: 9999999 !important; 
+                box-shadow: 0 5px 20px rgba(0,0,0,0.5); border-radius: 12px; border: 2px solid #ffffff;
+                display: none; min-width: 450px; pointer-events: none;
+            }
+            #trial-timer-ui {
+                position: fixed; top: 50%; left: calc(50% + 500px); transform: translateY(-50%);
+                width: 110px; height: 110px; z-index: 9999998;
+            }
+            .timer-svg { transform: rotate(-90deg); }
+            .timer-circle {
+                fill: transparent; stroke: #ffffff; stroke-width: 6;
+                stroke-linecap: round;
+            }
+            .too-slow-warning {
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                color: #ffffff; font-size: 14px; font-weight: 900; z-index: 1002;
+                animation: blink 0.1s infinite; display: none; white-space: nowrap;
+                text-align: center; width: 100%;
+            }
+            @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+            
+            .meter-container {
+                width: 100%; height: 24px; background: linear-gradient(90deg, #e74c3c 0%, #f1c40f 50%, #2ecc71 100%);
+                border-radius: 12px; position: relative; margin: 25px 0; border: 1px solid #ccc;
+            }
+            .meter-needle {
+                width: 6px; height: 36px; background: #2c3e50; position: absolute;
+                top: -6px; transition: left 1.5s ease-in-out; border-radius: 3px; box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            }
+            .eval-combined-box {
+                border: 2px solid #2c3e50; padding: 30px; border-radius: 15px; 
+                background: #fdfdfd; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+
+            /* Fixed Response Buttons Styles */
+            .fixed-btn-left {
+                position: fixed;
+                top: 50%;
+                left: calc(50% - 380px); /* 200px (canvas) + 180px (gap) */
+                transform: translate(-50%, -50%);
+                z-index: 1000000 !important;
+            }
+            .fixed-btn-right {
+                position: fixed;
+                top: 50%;
+                left: calc(50% + 380px); /* 200px (canvas) + 180px (gap) */
+                transform: translate(-50%, -50%);
+                z-index: 1000000 !important;
+            }
+            .response-btn {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                cursor: pointer;
+                user-select: none;
+                transition: transform 0.1s;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .response-btn:active {
+                transform: scale(0.92);
+            }
+            .arrow-box {
+                width: 90px;
+                height: 75px;
+                background: #ffffff;
+                border: 3px solid #000000;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                font-weight: 900;
+                color: #000000;
+                box-shadow: 0 6px 0px #cccccc;
+                position: relative;
+            }
+            .response-btn:active .arrow-box {
+                box-shadow: 0 2px 0px #cccccc;
+                transform: translateY(4px);
+            }
+            /* Left Arrow Head */
+            .left-btn .arrow-box::before {
+                content: '';
+                position: absolute;
+                left: -28px;
+                border-top: 38px solid transparent;
+                border-bottom: 38px solid transparent;
+                border-right: 28px solid #000000;
+            }
+            .left-btn .arrow-box::after {
+                content: '';
+                position: absolute;
+                left: -23px;
+                border-top: 33px solid transparent;
+                border-bottom: 33px solid transparent;
+                border-right: 23px solid #ffffff;
+            }
+            /* Right Arrow Head */
+            .right-btn .arrow-box::before {
+                content: '';
+                position: absolute;
+                right: -28px;
+                border-top: 38px solid transparent;
+                border-bottom: 38px solid transparent;
+                border-left: 28px solid #000000;
+            }
+            .right-btn .arrow-box::after {
+                content: '';
+                position: absolute;
+                right: -23px;
+                border-top: 33px solid transparent;
+                border-bottom: 33px solid transparent;
+                border-left: 23px solid #ffffff;
+            }
+            .btn-label {
+                margin-top: 12px;
+                font-size: 15px;
+                font-weight: 800;
+                color: #333;
+                letter-spacing: 1px;
+            }
+        </style>
+    </head>
+
+    <body style="background-color: #fcfcfc;">
+        <div id="loading-screen" style="text-align: center; margin-top: 100px; font-family: sans-serif;">
+            <h2>Clinical Efficiency Paradigm Loading...</h2>
+            <p>If this takes more than 5 seconds, please ensure you are connected to the internet.</p>
+        </div>
+    </body>
+
+    <script>
+        console.log("RDM Experiment Script Initializing...");
+        
+        // Clear loading screen
+        document.addEventListener("DOMContentLoaded", () => {
+            const ls = document.getElementById('loading-screen');
+            if (ls) ls.style.display = 'none';
+        });
+
+        // Global variables supporting session restore (Primary Safety Layer)
+        let restoredTrials = [];
+        let completedCount = 0;
+        let restoredConfidenceRating = null;
+        let restoredDemographics = null;
+
+        // Session restore checking (Primary Safety Layer)
+        let restoredSession = null;
+        try {
+            const saved = localStorage.getItem('rdm_study_active_session');
+            if (saved) {
+                restoredSession = JSON.parse(saved);
+                console.log("Found saved active session:", restoredSession);
+            }
+        } catch (e) {
+            console.error("Failed to read localStorage:", e);
+        }
+
+        // Initialize variables based on session state (restored or fresh)
+        let participant_id;
+        let evaluativeGroup;
+        let clinicalCredits = 500;
+        let isPressurePhase = false;
+
+        if (restoredSession && restoredSession.completedCount > 0) {
+            participant_id = restoredSession.participant_id;
+            evaluativeGroup = restoredSession.evaluativeGroup;
+            clinicalCredits = restoredSession.clinicalCredits;
+            isPressurePhase = restoredSession.isPressurePhase;
+            restoredTrials = restoredSession.restoredTrials || [];
+            completedCount = restoredSession.completedCount || 0;
+            restoredDemographics = restoredSession.demographics || null;
+            if (restoredSession.demographics && restoredSession.demographics.confidence_rating) {
+                restoredConfidenceRating = restoredSession.demographics.confidence_rating;
+            }
+        } else {
+            participant_id = "P_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+            evaluativeGroup = ["positive", "negative"][Math.floor(Math.random() * 2)];
+        }
+
+        /**
+         * 1. INITIALIZATION & DATA TRACKING
+         **/
+        // Data Extraction & Schema Mapping (Strict Schema Compliance)
+        function extractCleanTrialData() {
+            // Find all completed trials so far in current jsPsych run
+            const rawTrials = jsPsych.data.get().filter({phase: 'trial'}).values();
+            
+            // Find subjective measures if collected (confidence rating)
+            let confidence_rating = null;
+            try {
+                const surveyData = jsPsych.data.get().filter({trial_type: 'survey-likert'}).values();
+                surveyData.forEach(s => {
+                    if (s.response && s.response.c !== undefined) {
+                        confidence_rating = Number(s.response.c) + 1; // 1-indexed (1 to 7)
+                    }
+                });
+            } catch (e) {
+                console.error("Error reading survey data: ", e);
+            }
+
+            // Restore confidence rating from session if available
+            if (confidence_rating === null && restoredConfidenceRating !== null && restoredConfidenceRating !== undefined) {
+                confidence_rating = restoredConfidenceRating;
+            }
+
+            let cleanTrials = [...restoredTrials];
+            let trialCounter = cleanTrials.length + 1;
+
+            rawTrials.forEach((trial) => {
+                // Accuracy (0/1) based on comparison of actual response vs correct choice
+                let accuracy = 0;
+                if (trial.trial_outcome === "correct") {
+                    accuracy = 1;
+                }
+
+                // Response mapping ("left" | "right" | null)
+                let responseVal = null;
+                if (trial.response === 'a') {
+                    responseVal = 'left';
+                } else if (trial.response === 'l') {
+                    responseVal = 'right';
+                }
+
+                // Valid trial definition
+                let isValid = (trial.rt !== null && trial.response !== null && trial.response !== "") ? 1 : 0;
+
+                // Actual honest feedback outcome
+                let actualFeedbackVal = "timeout";
+                if (trial.rt !== null) {
+                    actualFeedbackVal = trial.actual_correct ? "correct" : "incorrect";
+                }
+
+                cleanTrials.push({
+                    participant_id: participant_id,
+                    trial_num: trialCounter++,
+                    block: trial.block === "practice" ? "practice" : trial.block, // "neutral" | "pressure" | "practice"
+                    coherence: Number(trial.coherence),
+                    response: responseVal,
+                    accuracy: accuracy,
+                    rt: trial.rt === null ? null : Number(trial.rt),
+                    valid_trial: isValid,
+                    feedback_group: evaluativeGroup.toLowerCase(), // Ensure lowercase as per standard
+                    confidence_rating: confidence_rating,
+                    
+                    // Secondary system log variables
+                    feedback_shown: trial.displayed_feedback || null,
+                    actual_feedback: actualFeedbackVal,
+                    manipulated_trial: trial.was_manipulated ? 1 : 0,
+                    credit_balance: Number(trial.running_credit_balance || 500),
+                    timer_condition: trial.block === "practice" ? "4000ms" : (trial.block === "neutral" ? "3000ms" : "1800ms")
+                });
+            });
+
+            return cleanTrials;
+        }
+
+        // Autosave compilation (Primary Safety Layer - Saves after every single trial and survey)
+        function autosaveToLocalStorage() {
+            const cleanData = extractCleanTrialData();
+            
+            // Read demographics from current properties
+            const props = jsPsych.data.get().values()[0] || {};
+            const demographics = {
+                age: props.age || (restoredDemographics ? restoredDemographics.age : null),
+                gender: props.gender || (restoredDemographics ? restoredDemographics.gender : null),
+                sleep_duration: props.sleep_duration || (restoredDemographics ? restoredDemographics.sleep_duration : null),
+                sleepiness_rating: props.sleepiness_rating || (restoredDemographics ? restoredDemographics.sleepiness_rating : null),
+                caffeine_response: props.caffeine_response || (restoredDemographics ? restoredDemographics.caffeine_response : null),
+                confidence_rating: restoredConfidenceRating
+            };
+
+            const state = {
+                participant_id: participant_id,
+                evaluativeGroup: evaluativeGroup,
+                clinicalCredits: clinicalCredits,
+                isPressurePhase: isPressurePhase,
+                demographics: demographics,
+                restoredTrials: cleanData,
+                completedCount: cleanData.length
+            };
+            try {
+                localStorage.setItem('rdm_study_active_session', JSON.stringify(state));
+            } catch (e) {
+                console.error("Failed to write session autosave:", e);
+            }
+        }
+
+        // Helper to convert clean flat objects into standard CSV
+        function convertArrayToCSV(arr) {
+            if (arr.length === 0) return "";
+            const headers = [
+                "participant_id", "trial_num", "block", "coherence", "response",
+                "accuracy", "rt", "valid_trial", "feedback_group", "confidence_rating",
+                "feedback_shown", "actual_feedback", "manipulated_trial", "credit_balance", "timer_condition"
+            ];
+            
+            const csvRows = [];
+            csvRows.push(headers.join(","));
+            
+            for (const row of arr) {
+                const values = headers.map(header => {
+                    const val = row[header];
+                    if (val === null || val === undefined) return "";
+                    const strVal = String(val);
+                    if (strVal.includes(",") || strVal.includes('"') || strVal.includes('\n')) {
+                        return `"${strVal.replace(/"/g, '""')}"`;
+                    }
+                    return strVal;
+                });
+                csvRows.push(values.join(","));
+            }
+            return csvRows.join("\n");
+        }
+
+        // Trigger download of clean CSV fallback
+        function downloadCleanCSV(cleanData) {
+            const csvStr = convertArrayToCSV(cleanData);
+            const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", participant_id + "_RDM_clean_data.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        const jsPsych = initJsPsych({
+            on_finish: function() {
+                // Compile final structured trial dataset
+                const cleanData = extractCleanTrialData();
+
+                // Visual transition overlay
+                document.body.innerHTML = `
+                    <div style="text-align: center; margin-top: 150px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin-left: auto; margin-right: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; border: 1px solid #e0e0e0;">
+                        <h2 id="submission-status" style="color: #2c3e50; font-size: 26px;">Uploading study data...</h2>
+                        <p id="submission-details" style="color: #7f8c8d; font-size: 16px; margin-top: 15px;">Please keep this browser tab open while data is transmitted to the local database.</p>
+                        <div id="action-buttons" style="margin-top: 30px; display: none;">
+                            <button onclick="window.location.reload();" style="padding: 10px 25px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background: #2c3e50; color: white; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Restart Experiment</button>
+                        </div>
+                    </div>
+                `;
+
+                // POST to localhost Express server
+                fetch('http://localhost:3000/api/save-trial-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        participant_id: participant_id,
+                        trials: cleanData
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("Express server rejected dataset saving");
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('submission-status').innerHTML = "Data Saved Successfully!";
+                    document.getElementById('submission-status').style.color = "#27ae60";
+                    document.getElementById('submission-details').innerHTML = "Your results have been automatically recorded into the secure research database.<br><br><b>You may now close this browser window. Thank you!</b>";
+                    document.getElementById('action-buttons').style.display = "block";
+                    
+                    // Clear active session only upon successful submission!
+                    try {
+                        localStorage.removeItem('rdm_study_active_session');
+                    } catch (e) {}
+                })
+                .catch(err => {
+                    console.warn("Storage server offline, triggering download fallback:", err);
+                    document.getElementById('submission-status').innerHTML = "Data Saved Locally (Offline Fallback)";
+                    document.getElementById('submission-status').style.color = "#d35400";
+                    document.getElementById('submission-details').innerHTML = "The research database server was unreachable.<br><br><b>A clean trial dataset (.csv) has been downloaded automatically to your computer.</b><br>Please email this file to your researcher.";
+                    document.getElementById('action-buttons').style.display = "block";
+                    
+                    downloadCleanCSV(cleanData);
+                    
+                    // Clear active session only after successful fallback download!
+                    try {
+                        localStorage.removeItem('rdm_study_active_session');
+                    } catch (e) {}
+                });
+            }
+        });
+
+        // Add global properties to all data
+        if (restoredDemographics) {
+            jsPsych.data.addProperties({
+                participant_id: participant_id,
+                evaluative_group: evaluativeGroup.toLowerCase(),
+                age: restoredDemographics.age,
+                gender: restoredDemographics.gender,
+                sleep_duration: restoredDemographics.sleep_duration,
+                sleepiness_rating: restoredDemographics.sleepiness_rating,
+                caffeine_response: restoredDemographics.caffeine_response
+            });
+        } else {
+            jsPsych.data.addProperties({
+                participant_id: participant_id,
+                evaluative_group: evaluativeGroup.toLowerCase()
+            });
+        }
+
+        let timeline = [];
+        
+        // Inject Clinical Header DOM Element
+        function injectHeader() {
+            if (!document.getElementById('clinical-header')) {
+                let header = document.createElement("div");
+                header.id = "clinical-header";
+                header.innerHTML = `Clinical Credits: ${clinicalCredits}`;
+                document.body.appendChild(header);
+            }
+        }
+        injectHeader();
+
+        function updateCreditHeader() {
+            let header = document.getElementById('clinical-header');
+            if (!header) {
+                header = document.createElement("div");
+                header.id = "clinical-header";
+                document.body.appendChild(header);
+            }
+            if (isPressurePhase) {
+                header.style.display = "block";
+                header.style.visibility = "visible";
+                header.innerHTML = `Clinical Credits: ${clinicalCredits}`;
+            } else {
+                header.style.display = "none";
+                header.style.visibility = "hidden";
+            }
+        }
+
+        /**
+         * 2. CONSENT, DEMOGRAPHICS & RESUME FLOW
+         **/
+        timeline.push({ type: jsPsychFullscreen, fullscreen_mode: true });
+
+        timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+            <div class="instruction-box">
+                <h2>Informed Consent</h2>
+                <p>Participation in this study is entirely voluntary. Your responses are anonymous and no personally identifying information (such as name or email) is collected.</p>
+                <p>You may quit the task at any time without penalty. The data collected will be used only for research purposes. The task involves making timed perceptual decisions.</p>
+                <p><b>Please complete this task in a quiet environment using a laptop or desktop keyboard if possible.</b></p>
+            </div>`,
+            choices: ["I Consent"],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            }
+        });
+
+        // Demographics
+        timeline.push({
+            type: jsPsychSurveyText,
+            questions: [{prompt: "Please enter your age:", name: 'age', required: true}],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) { 
+                jsPsych.data.addProperties({age: data.response.age}); 
+                autosaveToLocalStorage();
+            }
+        });
+
+        timeline.push({
+            type: jsPsychSurveyMultiChoice,
+            questions: [{
+                prompt: "Please select your gender:", 
+                options: ["Male", "Female", "Other", "Prefer not to say"],
+                name: 'gender', required: true
+            }],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) { 
+                jsPsych.data.addProperties({gender: data.response.gender}); 
+                autosaveToLocalStorage();
+            }
+        });
+
+        /**
+         * 3. ALERTNESS / SLEEP QUESTIONS
+         **/
+        timeline.push({
+            type: jsPsychSurveyText,
+            questions: [{prompt: "How many hours did you sleep last night?", name: 'sleep', required: true}],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) { 
+                jsPsych.data.addProperties({sleep_duration: data.response.sleep}); 
+                autosaveToLocalStorage();
+            }
+        });
+
+        timeline.push({
+            type: jsPsychSurveyLikert,
+            questions: [{
+                prompt: "How sleepy do you currently feel?",
+                labels: ["1 (Very alert)", "2", "3", "4", "5", "6", "7 (Very sleepy)"],
+                name: 'sleepiness', required: true
+            }],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) { 
+                jsPsych.data.addProperties({sleepiness_rating: data.response.sleepiness + 1}); 
+                autosaveToLocalStorage();
+            }
+        });
+
+        timeline.push({
+            type: jsPsychSurveyMultiChoice,
+            questions: [{
+                prompt: "Did you consume caffeine within the last 4 hours?",
+                options: ["Yes", "No"],
+                name: 'caffeine', required: true
+            }],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) { 
+                jsPsych.data.addProperties({caffeine_response: data.response.caffeine}); 
+                autosaveToLocalStorage();
+            }
+        });
+
+        /**
+         * 4. EXPERIMENT OVERVIEW & DEMOS
+         **/
+        timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+            <div class="instruction-box" style="text-align: center;">
+                <p style="font-size: 20px;">The experiment consists of:</p>
+                <ul style="text-align: left; display: inline-block; font-size: 18px; line-height: 1.8;">
+                    <li>A short practice section</li>
+                    <li>2 main task blocks</li>
+                    <li>Each block contains 4 short segments</li>
+                    <li>Performance summaries will appear after each segment</li>
+                </ul>
+                <p style="font-size: 18px; margin-top: 20px;">The full experiment contains 64 trials and usually takes about 8–10 minutes.</p>
+            </div>`,
+            choices: ["Continue"],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            }
+        });
+
+        // DEMONSTRATION 1
+        timeline.push({
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: "<h2>Notice how most dots move toward the RIGHT.</h2>",
+            choices: "NO_KEYS",
+            trial_duration: 3000,
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            }
+        });
+        timeline.push({
+            type: jsPsychRdk,
+            number_of_dots: 100,
+            coherence: 0.85,
+            coherent_direction: 0,
+            choices: "NO_KEYS",
+            trial_duration: 3000,
+            data: { phase: 'demonstration' },
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_load: function() {
+                if (completedCount > 0) return;
+                const lb = document.createElement('div');
+                lb.id = 'fixed-btn-left'; lb.className = 'response-btn left-btn fixed-btn-left';
+                lb.style.opacity = "0.5"; lb.style.cursor = "default";
+                lb.innerHTML = `<div class="arrow-box">A</div><div class="btn-label">LEFT</div>`;
+                
+                const rb = document.createElement('div');
+                rb.id = 'fixed-btn-right'; rb.className = 'response-btn right-btn fixed-btn-right';
+                rb.style.opacity = "0.5"; rb.style.cursor = "default";
+                rb.innerHTML = `<div class="arrow-box">L</div><div class="btn-label">RIGHT</div>`;
+                
+                document.body.appendChild(lb); document.body.appendChild(rb);
+            },
+            on_finish: function() {
+                const lb = document.getElementById('fixed-btn-left'); if(lb) lb.remove();
+                const rb = document.getElementById('fixed-btn-right'); if(rb) rb.remove();
+            }
+        });
+
+        // DEMONSTRATION 2
+        timeline.push({
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: "<h2>Now notice how most dots move toward the LEFT.</h2>",
+            choices: "NO_KEYS",
+            trial_duration: 3000,
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            }
+        });
+        timeline.push({
+            type: jsPsychRdk,
+            number_of_dots: 100,
+            coherence: 0.85,
+            coherent_direction: 180,
+            choices: "NO_KEYS",
+            trial_duration: 3000,
+            data: { phase: 'demonstration' },
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_load: function() {
+                if (completedCount > 0) return;
+                const lb = document.createElement('div');
+                lb.id = 'fixed-btn-left'; lb.className = 'response-btn left-btn fixed-btn-left';
+                lb.style.opacity = "0.5"; lb.style.cursor = "default";
+                lb.innerHTML = `<div class="arrow-box">A</div><div class="btn-label">LEFT</div>`;
+                
+                const rb = document.createElement('div');
+                rb.id = 'fixed-btn-right'; rb.className = 'response-btn right-btn fixed-btn-right';
+                rb.style.opacity = "0.5"; rb.style.cursor = "default";
+                rb.innerHTML = `<div class="arrow-box">L</div><div class="btn-label">RIGHT</div>`;
+                
+                document.body.appendChild(lb); document.body.appendChild(rb);
+            },
+            on_finish: function() {
+                const lb = document.getElementById('fixed-btn-left'); if(lb) lb.remove();
+                const rb = document.getElementById('fixed-btn-right'); if(rb) rb.remove();
+            }
+        });
+
+        // DEMONSTRATION 3
+        timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+            <h2>Some later trials will be more subtle and difficult.</h2>
+            <p style="font-size: 18px; margin-top: 20px;">Your task is to identify the overall direction as quickly and accurately as possible.</p>
+            <p style="font-size: 20px; font-weight: bold; margin-top: 20px;">Press:<br><b>A</b> &rarr; Left<br><b>L</b> &rarr; Right</p>`,
+            choices: ["Begin Practice"],
+            on_start: function(trial) {
+                if (completedCount > 0) {
+                    jsPsych.finishTrial();
+                }
+            }
+        });
+
+        /**
+         * 5. EXPERIMENT LOGIC & HELPER FUNCTIONS
+         **/
+        const coherenceLevels = [0.05, 0.10, 0.25, 0.35];
+
+        function createSegment(blockType, segmentNum, numTrials, duration, feedbackMode, startIndex) {
+            let segment = [];
+            let cohs = [];
+            for(let i=0; i<numTrials; i++) { cohs.push(coherenceLevels[i % coherenceLevels.length]); }
+            cohs = jsPsych.randomization.shuffle(cohs);
+
+            for (let i = 0; i < numTrials; i++) {
+                const globalTrialIndex = startIndex + i;
+
+                let dir = jsPsych.randomization.sampleWithoutReplacement(["left", "right"], 1)[0];
+                let cohDir = (dir === "right") ? 0 : 180;
+                let correctResp = (dir === "right") ? "l" : "a";
+
+                // Fixation
+                segment.push({
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: "<h1 style='font-size: 60px;'>+</h1>",
+                    choices: "NO_KEYS", trial_duration: 800,
+                    data: { phase: 'fixation' },
+                    on_start: function(trial) {
+                        if (globalTrialIndex < completedCount) {
+                            jsPsych.finishTrial();
+                        }
+                    }
+                });
+
+                // RDK Trial
+                segment.push({
+                    type: jsPsychRdk,
+                    number_of_dots: 100,
+                    coherence: cohs[i],
+                    coherent_direction: cohDir,
+                    choices: ["a", "l"],
+                    correct_choice: [correctResp],
+                    response_ends_trial: true,
+                    trial_duration: duration,
+                    on_start: function(trial) {
+                        if (globalTrialIndex < completedCount) {
+                            // Recover data raw matching localStorage state
+                            const restoredTrial = restoredTrials[globalTrialIndex];
+                            if (restoredTrial) {
+                                Object.assign(trial.data, restoredTrial);
+                            }
+                            jsPsych.finishTrial();
+                        } else {
+                            window.current_response_method = "keyboard";
+                        }
+                    },
+                    on_load: function() {
+                        if (globalTrialIndex < completedCount) return;
+                        
+                        if (blockType === "pressure") {
+                            let timerContainer = document.createElement("div");
+                            timerContainer.id = "trial-timer-ui";
+                            const radius = 50; const circumference = 2 * Math.PI * radius;
+                            timerContainer.innerHTML = `<svg class="timer-svg" width="110" height="110"><circle class="timer-circle" cx="55" cy="55" r="${radius}" style="stroke-dasharray: ${circumference}; stroke-dashoffset: 0;" /></svg><div id="too-slow-ui" class="too-slow-warning">TOO SLOW</div>`;
+                            document.body.appendChild(timerContainer);
+                            let circle = timerContainer.querySelector('.timer-circle');
+                            requestAnimationFrame(() => { requestAnimationFrame(() => { circle.style.transition = `stroke-dashoffset ${duration}ms linear`; circle.style.strokeDashoffset = circumference; }); });
+                            window.tooSlowTimeout = setTimeout(() => { let w = document.getElementById("too-slow-ui"); if (w) w.style.display = "block"; }, duration - 200);
+                        }
+                        updateCreditHeader();
+                        
+                        // Create fixed-position buttons
+                        const lb = document.createElement('div');
+                        lb.id = 'fixed-btn-left'; lb.className = 'response-btn left-btn fixed-btn-left';
+                        lb.innerHTML = `<div class="arrow-box">A</div><div class="btn-label">LEFT</div>`;
+                        
+                        const rb = document.createElement('div');
+                        rb.id = 'fixed-btn-right'; rb.className = 'response-btn right-btn fixed-btn-right';
+                        rb.innerHTML = `<div class="arrow-box">L</div><div class="btn-label">RIGHT</div>`;
+                        
+                        document.body.appendChild(lb);
+                        document.body.appendChild(rb);
+
+                        let responded = false;
+                        const handleBtn = (key) => {
+                            if (responded) return;
+                            responded = true;
+                            window.current_response_method = "button";
+                            
+                            const btnEl = key === 'a' ? lb : rb;
+                            const arrowBox = btnEl.querySelector('.arrow-box');
+                            arrowBox.style.backgroundColor = '#e0e0e0';
+                            arrowBox.style.transform = 'translateY(4px)';
+                            arrowBox.style.boxShadow = '0 2px 0px #cccccc';
+                            
+                            document.dispatchEvent(new KeyboardEvent('keydown', {
+                                key: key,
+                                code: key === 'a' ? 'KeyA' : 'KeyL',
+                                keyCode: key === 'a' ? 65 : 76,
+                                which: key === 'a' ? 65 : 76,
+                                bubbles: true,
+                                cancelable: true
+                            }));
+                        };
+
+                        lb.addEventListener('pointerdown', (e) => { e.preventDefault(); handleBtn('a'); });
+                        rb.addEventListener('pointerdown', (e) => { e.preventDefault(); handleBtn('l'); });
+                    },
+                    data: {
+                        phase: 'trial', block: blockType, segment_num: segmentNum, trial_num: globalTrialIndex + 1,
+                        coherence: cohs[i], direction: dir, correct_response: correctResp,
+                        is_practice: (blockType === "practice")
+                    },
+                    on_finish: function(data) {
+                        if (globalTrialIndex < completedCount) return;
+
+                        let timerUI = document.getElementById("trial-timer-ui");
+                        if (timerUI) timerUI.remove();
+                        let warningUI = document.getElementById("too-slow-ui");
+                        if (warningUI) warningUI.remove();
+                        clearTimeout(window.tooSlowTimeout);
+
+                        const lb = document.getElementById('fixed-btn-left'); if(lb) lb.remove();
+                        const rb = document.getElementById('fixed-btn-right'); if(rb) rb.remove();
+
+                        data.response_method = window.current_response_method;
+                        data.was_manipulated = false;
+                        let creditChange = 0;
+
+                        if (data.rt === null || data.response === null || data.response === "") {
+                            data.timeout_trial = true;
+                            data.trial_outcome = "timeout";
+                            data.actual_correct = null;
+                            if (blockType === "pressure") {
+                                data.displayed_feedback = "TOO SLOW — Clinical penalty applied";
+                            } else {
+                                data.displayed_feedback = "TOO LATE";
+                            }
+                        } else {
+                            data.timeout_trial = false;
+                            data.actual_correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+                            data.trial_outcome = data.actual_correct ? "correct" : "incorrect";
+                            data.displayed_feedback = data.actual_correct ? "CORRECT" : "INCORRECT";
+
+                            // Apply manipulation ONLY for pressure block at coherence <= 0.10 (0.05 and 0.10)
+                            if (blockType === "pressure" && data.coherence <= 0.10) {
+                                if (evaluativeGroup === "positive" && !data.actual_correct) {
+                                    data.displayed_feedback = "CORRECT";
+                                    data.was_manipulated = true;
+                                } else if (evaluativeGroup === "negative" && data.actual_correct) {
+                                    data.displayed_feedback = "INCORRECT";
+                                    data.was_manipulated = true;
+                                }
+                            }
+                        }
+
+                        if (blockType === "pressure") {
+                            if (data.trial_outcome === "timeout") {
+                                creditChange = -50;
+                            } else if (data.displayed_feedback === "CORRECT") {
+                                creditChange = 50;
+                            } else if (data.displayed_feedback === "INCORRECT") {
+                                creditChange = -50;
+                            }
+                            clinicalCredits += creditChange;
+                            updateCreditHeader();
+                        }
+
+                        data.credit_change = creditChange;
+                        data.running_credit_balance = clinicalCredits;
+
+                        // Autosave to localStorage (Primary Safety Layer - Executes after every trial)
+                        autosaveToLocalStorage();
+                    }
+                });
+
+                if (feedbackMode !== "none") {
+                    segment.push({
+                        type: jsPsychHtmlKeyboardResponse,
+                        stimulus: function() {
+                            if (globalTrialIndex < completedCount) return "";
+                            let lastTrial = jsPsych.data.get().last(1).values()[0];
+                            let color = (lastTrial.displayed_feedback === "CORRECT") ? "#27ae60" : "#c0392b";
+                            if (lastTrial.timeout_trial) color = "#c0392b";
+                            return `<div class="feedback-text" style="color: ${color}">${lastTrial.displayed_feedback}</div>`;
+                        },
+                        choices: "NO_KEYS", trial_duration: 800,
+                        data: { phase: 'feedback' },
+                        on_start: function(trial) {
+                            if (globalTrialIndex < completedCount) {
+                                jsPsych.finishTrial();
+                            }
+                        }
+                    });
+                }
+            }
+            return segment;
+        }
+
+        // Stats summary screen calculated over consolidated trials (handles resume beautifully)
+        function createStatsScreen(blockType, segmentNum) {
+            // endIndex is the cumulative trial count ACROSS the whole experiment at which this segment ends.
+            // Practice: trials 1-8, Neutral: trials 9-40, Pressure: trials 41-72
+            const blockStart = blockType === "practice" ? 0 : (blockType === "neutral" ? 8 : 40);
+            const endIndex = blockStart + segmentNum * 8; // used only for fast-forward check
+            return {
+                type: jsPsychHtmlButtonResponse,
+                stimulus: function() {
+                    const allData = extractCleanTrialData();
+                    // Get only the trials for this block type, sorted by trial_num
+                    const blockTrials = allData
+                        .filter(t => t.block === blockType)
+                        .sort((a, b) => a.trial_num - b.trial_num);
+                    // Slice out just this segment's 8 trials (0-indexed segment)
+                    const segStart = (segmentNum - 1) * 8;
+                    const trials = blockTrials.slice(segStart, segStart + 8);
+
+                    let correct = trials.filter(t => t.accuracy === 1 && t.valid_trial === 1).length;
+                    let rtSum = 0; let rtCount = 0;
+                    trials.forEach(t => { if (t.rt) { rtSum += t.rt; rtCount++; } });
+                    
+                    let acc = trials.length > 0 ? ((correct / trials.length) * 100).toFixed(2) : 0;
+                    let rt = rtCount > 0 ? (rtSum / rtCount).toFixed(2) : 0;
+                    return `<div class="stats-box"><h2>Performance Summary</h2><p>Accuracy: <b>${acc}%</b></p><p>Average RT: <b>${rt} ms</b></p></div>`;
+                },
+                choices: ["Continue"],
+                on_start: function(trial) {
+                    if (endIndex <= completedCount) {
+                        jsPsych.finishTrial();
+                    }
+                }
+            };
+        }
+
+        function createCombinedEvalScreen(segmentNum) {
+            const startIndex = 40 + (segmentNum - 1) * 8;
+            return {
+                type: jsPsychHtmlButtonResponse,
+                stimulus: function() {
+                    let baseProgress = (segmentNum / 4) * 40; 
+                    let noise = (Math.random() * 10) - 5; 
+                    let position = 50; 
+                    if (evaluativeGroup === "positive") position = 50 + baseProgress + noise;
+                    else position = 50 - baseProgress + noise;
+                    position = Math.max(5, Math.min(95, position));
+                    
+                    let statements = (evaluativeGroup === "positive") ? positiveStatements : negativeStatements;
+                    let stmt = statements[Math.min(segmentNum - 1, statements.length - 1)];
+                    
+                    return `
+                    <div class="eval-combined-box">
+                        <h2 style="margin-top: 0;">Clinical Efficiency Evaluation</h2>
+                        <hr>
+                        <p style="font-size: 20px; color: #7f8c8d; margin-bottom: 30px;">
+                            Current Assessment: <span style="color: #2c3e50; font-weight: bold;">${stmt}</span>
+                        </p>
+                        
+                        <div class="meter-container">
+                            <div class="meter-needle" style="left: ${position}%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; color: #7f8c8d; margin-bottom: 40px;">
+                            <span>CRITICAL</span>
+                            <span>OPTIMAL</span>
+                        </div>
+                        
+                        <div style="background: #f1f3f5; padding: 20px; border-radius: 10px; border: 1px solid #ddd;">
+                            <p style="font-size: 22px; margin: 0;">Current Clinical Credits: <span style="font-weight: 800; color: #27ae60;">${clinicalCredits}</span></p>
+                        </div>
+                    </div>`;
+                },
+                choices: ["Continue Evaluative Phase"],
+                on_start: function(trial) {
+                    if (startIndex < completedCount) {
+                        jsPsych.finishTrial();
+                    }
+                },
+                on_load: () => { 
+                    if (startIndex >= completedCount) {
+                        isPressurePhase = true;
+                        updateCreditHeader(); 
+                    }
+                }
+            };
+        }
+
+        /**
+         * 6. PRACTICE SEGMENT
+         **/
+        const practiceSegmentTrials = createSegment("practice", 0, 8, 4000, "true", 0);
+        if (practiceSegmentTrials.length > 0) {
+            timeline = timeline.concat(practiceSegmentTrials);
+        }
+
+        /**
+         * 7. NEUTRAL BLOCK (32 trials)
+         **/
+        for (let s = 1; s <= 4; s++) {
+            const startIndex = 8 + (s - 1) * 8;
+            const segmentTrials = createSegment("neutral", s, 8, 3000, "honest", startIndex);
+            timeline.push({
+                type: jsPsychHtmlButtonResponse,
+                stimulus: `<h2>Neutral Block</h2><p style="font-size: 20px;">Segment ${s} of 4</p><br><p>Press Continue when ready.</p>`,
+                choices: ["Continue"],
+                on_start: function(trial) {
+                    if (startIndex < completedCount) {
+                        jsPsych.finishTrial();
+                    }
+                }
+            });
+            timeline = timeline.concat(segmentTrials);
+            timeline.push(createStatsScreen("neutral", s));
+        }
+
+        /**
+         * 8. EVALUATIVE BLOCK (32 trials)
+         **/
+        const positiveStatements = [
+            "Your response accuracy is currently being recorded above average.",
+            "Your response efficiency is currently higher than most participants.",
+            "Your recent performance under time constraints remains above average."
+        ];
+        const negativeStatements = [
+            "Your response accuracy is currently being recorded below average.",
+            "Your response efficiency is currently lower than most participants.",
+            "Your recent performance under time constraints remains below average."
+        ];
+
+        timeline.push({ 
+            type: jsPsychHtmlButtonResponse, 
+            stimulus: `
+            <div class="instruction-box" style="text-align: center;">
+                <h2>Clinical Efficiency Evaluation Phase</h2>
+                <p style="font-size: 18px; line-height: 1.8;">
+                    Your <b>response speed</b>, <b>response accuracy</b>, and <b>clinical decision efficiency</b> will now be monitored continuously.
+                </p>
+                <ul style="text-align: left; display: inline-block; font-size: 16px; margin: 20px 0;">
+                    <li><b>Clinical Credits</b> reflect your real-time performance quality.</li>
+                    <li>The <b>Clinical Efficiency Meter</b> evaluates your precision under pressure.</li>
+                </ul>
+                <p style="font-size: 20px; font-weight: bold; color: #c0392b;">Time constraints are active. Respond as quickly and accurately as possible.</p>
+            </div>`, 
+            choices: ["Continue"],
+            on_start: function(trial) {
+                if (40 < completedCount) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function() {
+                isPressurePhase = true;
+                let header = document.getElementById('clinical-header');
+                if (header) {
+                    header.style.display = "block";
+                    updateCreditHeader();
+                }
+            }
+        });
+
+        for (let s = 1; s <= 4; s++) {
+            const startIndex = 40 + (s - 1) * 8;
+            const segmentTrials = createSegment("pressure", s, 8, 1800, "manipulated", startIndex);
+            // 1. Combined Evaluation Screen
+            timeline.push(createCombinedEvalScreen(s));
+            
+            // 2. 8 Pressure Trials
+            timeline = timeline.concat(segmentTrials);
+            
+            // 3. Segment Summary
+            timeline.push(createStatsScreen("pressure", s));
+        }
+
+        // Hide tracker after block
+        timeline.push({
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: " ",
+            trial_duration: 10,
+            choices: "NO_KEYS",
+            on_start: function(trial) {
+                if (72 <= completedCount) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function() {
+                isPressurePhase = false;
+                let header = document.getElementById('clinical-header');
+                if (header) header.style.display = "none";
+                jsPsych.data.addProperties({ final_credit_balance: clinicalCredits });
+            }
+        });
+
+        /**
+         * 9. MANIPULATION CHECKS
+         **/
+        timeline.push({
+            type: jsPsychSurveyLikert,
+            questions: [
+                {prompt: "How pressured did you feel during the task?", labels: ["1","2","3","4","5","6","7"], required: true, name: 'p'},
+                {prompt: "How confident did you feel in your performance?", labels: ["1","2","3","4","5","6","7"], required: true, name: 'c'},
+                {prompt: "To what extent did the performance messages affect you?", labels: ["1","2","3","4","5","6","7"], required: true, name: 'i'}
+            ],
+            on_start: function(trial) {
+                if (restoredConfidenceRating !== null && restoredConfidenceRating !== undefined) {
+                    jsPsych.finishTrial();
+                }
+            },
+            on_finish: function(data) {
+                const pVal = data.response.p + 1;
+                const cVal = data.response.c + 1;
+                const iVal = data.response.i + 1;
+                
+                restoredConfidenceRating = cVal;
+                
+                jsPsych.data.addProperties({
+                    pressure_rating: pVal,
+                    confidence_rating: cVal,
+                    message_impact_rating: iVal
+                });
+
+                // Update final autosave with confidence rating loaded!
+                autosaveToLocalStorage();
+            }
+        });
+
+        /**
+         * 10. DEBRIEF & UPLOAD
+         **/
+        timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+            <h2>Study Complete</h2>
+            <p>Standardized messages and feedback were used for experimental purposes.</p>
+            <p style="color: #27ae60; font-weight: bold; font-size: 20px; margin-top: 20px;">A data file will automatically download to your computer when you click Finish.</p>
+            <p>Please email or send this downloaded file (.csv) back to the researcher.</p>
+            <br>
+            <p>Thank you for participating!</p>`,
+            choices: ["Finish"]
+        });
+
+        /**
+         * RUN
+         **/
+        jsPsych.run(timeline);
+    </script>
+</body>
+</html>
