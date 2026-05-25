@@ -30,7 +30,15 @@
             .stats-box { background: #f1f3f5; padding: 25px; border-radius: 12px; border-left: 6px solid #2c3e50; text-align: left; }
             h2 { color: #2c3e50; }
             .feedback-text { font-size: 42px; font-weight: bold; text-align: center; }
-            
+
+            /* CENTERING CONTENT and ensuring it scales well on different screen sizes */
+            .jspsych-content-wrapper {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                height: 100vh !important;
+            }
+
             /* Clinical UI Elements */
             #clinical-header {
                 position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
@@ -164,7 +172,7 @@
             <h2>Clinical Efficiency Paradigm Loading...</h2>
             <p>If this takes more than 5 seconds, please ensure you are connected to the internet.</p>
         </div>
-    </body>
+    <!--/body "ADDING SCRIPT INSIDE BODY TAG TO RUN CORRECTLY" -->
 
     <script>
         console.log("RDM Experiment Script Initializing...");
@@ -364,15 +372,55 @@
             document.body.removeChild(link);
         }
 
+        //ADDING Plugin CHECKS BEFORE jsPsych INIT HERE TO CATCH CDN ISSUES EARLY (Primary Safety Layer)
+        (function checkPlugins(){
+            const required = [
+                'jsPsych',
+                'jsPsychRdk',
+                'jsPsychFullscreen',
+                'jsPsychHtmlButtonResponse',
+                'jsPsychHtmlKeyboardResponse',
+                'jsPsychSurveyText',
+                'jsPsychSurveyMultiChoice',
+                'jsPsychSurveyLikert'
+            ];
+            const missing = required.filter(n => typeof window[n] === 'undefined');
+            if (missing.length) {
+                const msg = 'Missing required jsPsych plugins: ' + missing.join(', ') +
+                            '. Check CDN links and plugin names.';
+                console.error(msg);
+                alert(msg);
+                throw new Error(msg);
+            }
+        })();
+
         const jsPsych = initJsPsych({
             on_finish: function() {
                 // Compile final structured trial dataset
                 const cleanData = extractCleanTrialData();
 
+                /*fetch("/api/save-trial-data", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        participant_id: participant_id,
+                        trials: cleanData
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Server response:", data);
+                })
+                .catch(err => {
+                    console.error("Upload failed:", err);
+                }); */
+                
                 // Visual transition overlay
                 document.body.innerHTML = `
                     <div style="text-align: center; margin-top: 150px; font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin-left: auto; margin-right: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; border: 1px solid #e0e0e0;">
-                        <h2 id="submission-status" style="color: #2c3e50; font-size: 26px;">Uploading study data...</h2>
+                        <h2 id="submission-status" style="color: #2c3e50; font-size: 26px;">Finalizing study data...</h2>
                         <p id="submission-details" style="color: #7f8c8d; font-size: 16px; margin-top: 15px;">Please keep this browser tab open while data is transmitted to the local database.</p>
                         <div id="action-buttons" style="margin-top: 30px; display: none;">
                             <button onclick="window.location.reload();" style="padding: 10px 25px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background: #2c3e50; color: white; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Restart Experiment</button>
@@ -380,19 +428,22 @@
                     </div>
                 `;
 
-console.log("Backend disabled for Render");
+                console.log("Backend disabled for Render");
+                downloadCleanCSV(cleanData);  //DOWNLOADING CLEAN CSV LOCALLY FOR REVIEW AND DEBUGGING IN RENDER ENVIRONMENT
 
-document.getElementById('submission-status').innerHTML = "Experiment Complete";
-document.getElementById('submission-status').style.color = "#27ae60";
+                document.getElementById('submission-status').innerHTML = "Experiment Complete";
+                document.getElementById('submission-status').style.color = "#27ae60";
 
-document.getElementById('submission-details').innerHTML =
-"Data saved locally. You can close the window.";
+                document.getElementById('submission-details').innerHTML =
+                "Data saved locally. You can close the window.";
 
-document.getElementById('action-buttons').style.display = "block";
+                document.getElementById('action-buttons').style.display = "block";
 
-try {
-    localStorage.removeItem('rdm_study_active_session');
-} catch (e) {}                    
+                try {
+                    localStorage.removeItem('rdm_study_active_session');
+                } catch (e) {}   
+            } 
+        });       //CLOSING THE BRACKETS FOR JSPSYCH INIT HERE          
 
         // Add global properties to all data
         if (restoredDemographics) {
@@ -465,8 +516,9 @@ try {
             questions: [{prompt: "Please enter your age:", name: 'age', required: true}],
             on_finish: function(data) {
                 const response = data?.response || {};
+                const age = Object.values(response)[0]; // Handle both Q0 or 'age' naming
                 jsPsych.data.addProperties({
-                    age: response.age ?? response.Q0 ?? null
+                    age: age ?? null
                 });
                 autosaveToLocalStorage();
             }
@@ -481,8 +533,9 @@ try {
             }],
             on_finish: function(data) {
                 const response = data?.response || {};
+                const gender = Object.values(response)[0]; // Handle both Q0 or 'gender' naming
                 jsPsych.data.addProperties({
-                    gender: response.gender ?? response.Q0 ?? response.Q1 ?? null
+                    gender: gender ?? null
                 });
                 autosaveToLocalStorage();
             }
@@ -493,11 +546,12 @@ try {
          **/
         timeline.push({
             type: jsPsychSurveyText,
-            questions: [{prompt: "How many hours did you sleep last night?", name: 'sleep', required: true}],
+            questions: [{prompt: "How many hours did you sleep last night?", name: 'sleep_duration', required: true}],
             on_finish: function(data) {
                 const response = data?.response || {};
+                const sleep_duration = Object.values(response)[0]; // Handle both Q0 or 'sleep' naming
                 jsPsych.data.addProperties({
-                    sleep_duration: response.sleep_duration ?? response.sleep ?? null
+                    sleep_duration: sleep_duration ?? null
                 });
                 autosaveToLocalStorage();
             }
@@ -511,8 +565,8 @@ try {
                 name: 'sleepiness', required: true
             }],
             on_finish: function(data) {
-                const response = data?.response || {};
-                const sleepinessValue = typeof response.sleepiness === 'number' ? response.sleepiness + 1 : null;
+                const response = data.response || {};
+                const sleepinessValue = Object.values(response)[0]; // Handle both Q0 or 'sleepiness' naming
                 jsPsych.data.addProperties({
                     sleepiness_rating: response.sleepiness_rating ?? sleepinessValue ?? null
                 });
@@ -528,9 +582,10 @@ try {
                 name: 'caffeine', required: true
             }],
             on_finish: function(data) {
-                const response = data?.response || {};
+                const response = data.response || {};
+                const caffeine_response = Object.values(response)[0]; // Handle both Q0 or 'caffeine' naming
                 jsPsych.data.addProperties({
-                    caffeine_response: response.caffeine_response ?? response.caffeine ?? null
+                    caffeine_response: caffeine_response ?? null
                 });
                 autosaveToLocalStorage();
             }
@@ -668,7 +723,7 @@ try {
                     coherence: cohs[i],
                     coherent_direction: cohDir,
                     choices: ["a", "l"],
-                    correct_choice: correctResp,
+                    correct_choice: [correctResp],
                     response_ends_trial: true,
                     trial_duration: duration,
                     on_start: function(trial) {
@@ -1016,7 +1071,8 @@ try {
          * RUN
          **/
         jsPsych.run(timeline);
-    }});
+    //}
+    //});
     </script>
-</body>
+    </body>
 </html>
