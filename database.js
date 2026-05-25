@@ -7,7 +7,9 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
-
+pool.connect()
+  .then(() => console.log("✅ PostgreSQL CONNECTED SUCCESSFULLY"))
+  .catch(err => console.error("❌ PostgreSQL CONNECTION FAILED:", err.message));
 // SAVE PARTICIPANT TRIALS
 async function saveParticipantTrials(trials, callback) {
     try {

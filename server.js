@@ -423,8 +423,8 @@ app.get('/admin', (req, res) => {
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Active Database</div>
-                        <div class="stat-value" style="color: var(--accent-color);">SQLite 3</div>
-                        <div class="stat-desc">Local atomic file storage (data.db)</div>
+                        <div class="stat-value" style="color: var(--accent-color);">PostgreSQL</div>
+                        <div class="stat-desc">Cloud-based relational database(production)</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Data Schema Status</div>
@@ -477,6 +477,6 @@ app.listen(PORT, () => {
     console.log(`🚀 RDM Research Storage Server is online!`);
     console.log(`📍 Server running on port ${PORT}`);
     console.log(`📊 Admin Panel available at /admin`);
-    console.log(`💾 SQLite Database connected successfully.`);
+    console.log(`💾 PostgreSQL Database connected successfully.`);
     console.log(`======================================================\n`);
 });
