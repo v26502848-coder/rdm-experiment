@@ -399,7 +399,7 @@
                 // Compile final structured trial dataset
                 const cleanData = extractCleanTrialData();
 
-                /*fetch("/api/save-trial-data", {
+                fetch("/api/save-trial-data", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -415,7 +415,7 @@
                 })
                 .catch(err => {
                     console.error("Upload failed:", err);
-                }); */
+                }); 
                 
                 // Visual transition overlay
                 document.body.innerHTML = `
